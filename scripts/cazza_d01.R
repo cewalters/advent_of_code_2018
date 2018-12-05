@@ -1,6 +1,6 @@
 # Part 1
 
-dat <- read.table("cazza_d01.txt")
+dat <- read.table("data/d01_1.txt")
 val <- sum(dat[1:960, ])
 
 
