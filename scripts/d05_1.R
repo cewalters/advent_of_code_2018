@@ -6,6 +6,28 @@
 # read in dat_vec
 load(file = "data/d05_1_numeric.Rds")
 
+polymer_length(dat_vec[1:30])
+
+tvec <- dat_vec[1:30]
+polymer_length(tvec)
+
+sum(midpoint(tvec) ==0)
+subs <- create_subvectors(tvec)
+odd_palindrome_indices(subs[[3]][ , 2], subs[[3]][ , 1])
+
+##################################################
+
+subvecs <- create_subvectors(dat_vec)
+subvecs[[32]]
+
+odd_palindrome_indices(subvecs[[32]][ , 2], 
+                       subvecs[[32]][ , 1])
+
+
+# It is all wrong :(
+
+###########################################
+
 length(unique(dat_vec))
 value_frequency(dat_vec)
 
@@ -56,6 +78,7 @@ min_distance_between_zeros <- function(midpoint_vector){
 create_subvectors <- function(vec){
   
   midpoints <- midpoint(vec)
+  mat <- min_distance_between_zeros(midpoints)
   
   calc_indices <- function(index, min_dist){
     seq(index - min_dist, index + min_dist)
@@ -66,24 +89,160 @@ create_subvectors <- function(vec){
                                                     min_dist = mat[ n, "min_dist"]) )
   
   diffs <- diff(vec)
-  lapply(1:length(subvec_indices), function(n) diffs[subvec_indices[[n]]]) 
+  lapply(1:length(subvec_indices), 
+         function(n) cbind("index" = subvec_indices[[n]], 
+                           "diffs" = diffs[subvec_indices[[n]]])) 
 }
+
+
+odd_palindrome_length <- function(vec){
+  middle_position <- ceiling(length(vec)/2)
+  Rvec <- vec[(middle_position + 1):length(vec)]
+  Lvec <- rev(vec[(1:middle_position - 1)])
+  
+  # find first position where the vectors DO NOT match
+  no_match_index <- min(which(Rvec != Lvec))
+  palindrome_length <- 1 + (no_match_index-1)*2
+  palindrome_length
+}
+
+
+odd_palindrome_indices <- function(vec, vec_index){
+  if(length(vec) != length(vec_index)){
+    message("vector and corresponding indices are incorrect.  You have clearly 
+            done something terrible. Raaah. Terrible lizard.")
+  } else if(length(vec) == 1) {
+    unname(vec_index)
+  } else {
+    
+    middle_position <- ceiling(length(vec)/2)
+    middle_index <- vec_index[middle_position]
+    Rvec <- vec[(middle_position + 1):length(vec)]
+    Lvec <- rev(vec[(1:middle_position - 1)])
+    
+    # find first position where the vectors DO NOT match, take one off to get end
+    #  of palindrome chain
+    equal <- Rvec == Lvec
+    if(FALSE %in% equal){
+      final_match_length <- min(which(Rvec != Lvec)) - 1
+    } else {
+      final_match_length <- length(Rvec)
+    }
+    
+    match_indices <- seq(middle_index - final_match_length, 
+                         middle_index + final_match_length)
+    
+    #print(match_indices)
+    match_indices
+  }
+}
+
+calc_repeats <- function(palindrome_indices_list){
+  # only interested in the edge values of palindromes.  If consecutive edge values 
+  #  appear, there share a value in our input vec.
+  
+  number_repeated_edges <- function(palindrome_indices_list){
+    edges <- lapply(1:3, function(n) c(min(palindrome_indices_list[[n]]), 
+                                       max(palindrome_indices_list[[n]]) )) 
+    unique_edges <- unlist(lapply(edges, unique))
+    
+    #sum the number of consecutive pairs of edges
+    sum(duplicated(c(unique_edges, unique_edges+1)))
+  }
+  
+  2*number_repeated_edges(palindrome_indices_list)
+  
+}
+
+polymer_length <- function(num_vec){
+  
+  sub_vecs <- create_subvectors(num_vec)
+  palindrome_indices <- lapply(1:length(sub_vecs), 
+                               function(n) odd_palindrome_indices(vec = sub_vecs[[n]][ , 2], 
+                                                                  vec_index = sub_vecs[[n]][ , 1]))
+  
+  print(palindrome_indices)
+  
+  # calc the palindrome lengths in input vector.  We can then subtract the sum
+  #  of these lengths from length of the input vector to get our answer
+  calc_input_palindrome_lengths <- function(palindrome_indices_list){
+    
+    each_length <- lapply(palindrome_indices_list, function(...) length(...) + 1)
+    sum(unlist(each_length))
+  }
+  
+  # some values may be in 2 palindromes hence counted twice.
+  # need to not double count any.
+  number_reacted_values <- calc_input_palindrome_lengths(palindrome_indices) - calc_repeats(palindrome_indices)
+  length(num_vec) - number_reacted_values
+  }
+
+
 ##################################################
 # example: solution is 10 units
 ex <- "dabAcCaCBAcCcaDA"
 ex_char <- unlist(strsplit(ex, split = ""))
 ex_vec <- unname(vapply(ex_char, letter2integer, numeric(1)))
 
+calc_repeats(ex_vec)
+polymer_length(ex_vec)
+
+
+
+
+
+
+
+
+
+
+
+
+
+########################
 #filter(ex_vec, c(0.5, 0.5))
 
 mat <- min_distance_between_zeros(midpoint(ex_vec))
 
-create_subvectors(ex_vec)
+ex_vec
+diff(ex_vec)
+sub_vecs <- create_subvectors(ex_vec)
 
+
+v1 <- c(2, 3, 0, 1, 2, 1, 0, 1, 2)
+i1 <- 1:length(v1)
+
+sub_vecs[[2]]
+
+odd_palindrome_indices(vec = sub_vecs[[1]][ , 2], vec_index = sub_vecs[[1]][ , 1])
+palindrome_indices <- lapply(1:length(sub_vecs), function(n) odd_palindrome_indices(vec = sub_vecs[[n]][ , 2], 
+                                                              vec_index = sub_vecs[[n]][ , 1]))
+
+ind_vec <- unlist(palindrome_indices)
+ind_vec1 <- ind_vec + 1
+
+
+
+
+
+polymer_length(ex_vec)
+
+
+
+calc_repeats(palindrome_indices)
+
+edges <- lapply(1:3, function(n) c(min(palindrome_indices[[n]]), max(palindrome_indices[[n]]) )) 
+unique_edges <- lapply(edges, unique)
+t1 <- unlist(unique_edges)
+t2 <- t1+1
 # now write a function to identify palindromes
 
+# Say we have a list of palindrome incides
+# 1) count how many numbers this corresponds to in our input vector
 
 
+
+f1(test_func(ex_vec))
 
 ########################################################
 vec_diff <- diff(ex_vec)
